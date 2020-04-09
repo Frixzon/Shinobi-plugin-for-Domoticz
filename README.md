@@ -1,5 +1,5 @@
 # Shinobi-plugin-for-Domoticz
-A Domoticz plugin that creates a switch for each monitor configured in your Shinobi server in order to enable Domoticz to change their state.
+A Domoticz plugin that creates a switch for each monitor configured in your Shinobi server and enables Domoticz to change their state.
 
 ## Prerequisites
 1. Rrequests libary for Python 3: https://pypi.org/project/requests/
