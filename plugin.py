@@ -4,7 +4,7 @@
 # https://shinobi.video/docs/api
 #
 """
-<plugin key="shinobi" name="Shinobi" author="Frix" version="0.1" wikilink="https://shinobi.video/docs/api">
+<plugin key="shinobi" name="Shinobi" author="Frix" version="0.2" wikilink="https://shinobi.video/docs/api">
     <description>
         <h2>Shinobi - Monitor Controller</h2><br/>
         <h3>Features</h3>
@@ -47,6 +47,7 @@ class API:
 		self.username = None
 		self.password = None
 		self.session = False
+		self.timeout = 2
 		return
 
 	def login(self):
@@ -76,15 +77,15 @@ class API:
 	def call(self, cmd, params = ""):
 		for i in range(self.retryCount):
 			try:
-				monitors = requests.get(self.url + self.session['API_KEY'] + "/" + cmd + "/" + self.session['GROUP_KEY'] + "/" + params)
+				monitors = requests.get(str(self.url) + str(self.session['API_KEY']) + "/" + str(cmd) + "/" + str(self.session['GROUP_KEY']) + "/" + str(params), timeout=self.timeout)
 				#Domoticz.Log(str(monitors.json()))
 				return monitors.json()
 			except requests.exceptions.RequestException as e:
 				retries = self.retryCount - i
-				Domoticz.Log("Failed to send get monitors from " + self.url)
-				Domoticz.Debug(e)
-				Domoticz.Log("Retrying " + str(retries) + "times...")
-				self.login(self.username, self.password, self.url)
+				Domoticz.Log("Failed to get " + str(cmd) + " at " + str(self.url))
+				Domoticz.Debug("Exception: " + str(e))
+				Domoticz.Log("Retrying with new connection. Try " + str(retries) + " of " + str(self.retryCount) + " times...")
+				self.login()
 				continue
 
 class BasePlugin:
@@ -115,15 +116,18 @@ class BasePlugin:
 					Name = monitor['name']
 					Mode = monitor['mode']
 
-					Options = {"LevelActions": "||","LevelNames": "Watch Only|Record|Off","LevelOffHidden": "True","SelectorStyle": "0"}
+					Options = {"LevelActions": "||","LevelNames": "Off|Watch Only|Record","LevelOffHidden": "True","SelectorStyle": "0"}
 					Domoticz.Device(Name="Monitor " + str(Name),  Unit=int(idx), DeviceID=str(Id), TypeName="Selector Switch", Options=Options).Create()
 					Domoticz.Log("Device Monitor Unit " + str(idx) + " " + str(Name) + " with DeviceID " + str(Id) + " was created.")
 
-					lvl = str(0)
+					Domoticz.Device(Name="Monitor " + str(Name),  Unit=int(idx+10), DeviceID=str(Id), TypeName="Switch", Switchtype=9, Options=Options).Create()
+					Domoticz.Log("Device Monitor Unit " + str(idx+10) + " " + str(Name) + " with DeviceID " + str(Id) + " was created.")
+
+					lvl = str(10)
 					if Mode == "record":
-						lvl = str(10)
-					if Mode == "idle":
 						lvl = str(20)
+					if Mode == "idle":
+						lvl = str(0)
 					Devices[idx].Update(1,lvl)
 
 
@@ -146,15 +150,15 @@ class BasePlugin:
 		mid = str(Devices[Unit].DeviceID)
 
 		if Level == 0:
-			params = mid+'/start'
+			params = mid+'/stop'
 			self.api.call(cmd, params)
 			Devices[Unit].Update(1,str(0))
 		if Level == 10:
-			params = mid+'/record'
+			params = mid+'/start'
 			self.api.call(cmd, params)
 			Devices[Unit].Update(1,str(10))
 		if Level == 20:
-			params = mid+'/stop'
+			params = mid+'/record'
 			self.api.call(cmd, params)
 			Devices[Unit].Update(1,str(20))
 
