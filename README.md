@@ -36,4 +36,5 @@ The following devices are created:
 
 | Type                | Name                      | Description
 | :---                | :---                      | :---
-| Selector Switch | Monitor #                     | Can set monitor state Watch Only/Record/Off
+| Selector Switch     | Monitor Mode#             | Can set monitor state Watch Only/Record/Off
+| Push On Button      | Monitor Trigger Event #   | Trigger a monitor motion event
